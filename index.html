@@ -28,14 +28,11 @@
     <section class="home-view" id="homeView">
       <section class="card hero-card">
       <div>
-        <div class="eyebrow">Специальный</div>
-        <h1>ИИ автоответчик</h1>
+        <div class="eyebrow version-badge"><span>Версия приложения</span><code>1.0</code></div>
+        <h1>Главное меню</h1>
         <p>Подключите бота к своему аккаунту Telegram и бот будет автоматически отвечать на сообщения ваших клиентов при помощи ИИ.</p>
       </div>
 
-      <div class="status-pill">
-        <span></span> Не подключен
-      </div>
       </section>
 
       <section class="card menu-card">
@@ -55,8 +52,15 @@
 
     <section class="management-view" id="managementView" hidden>
       <div class="management-heading">
-        <div class="eyebrow">ИИ автоответчик</div>
-        <h1>Настройка автоответчика</h1>
+        <div class="heading-row">
+          <button class="back-btn heading-back-btn" id="backBtn" type="button" aria-label="Назад" title="Назад">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          </button>
+          <div>
+            <div class="eyebrow">ИИ автоответчик</div>
+            <h1 class="compact-title">Настройка автоответчика</h1>
+          </div>
+        </div>
         <p>Настройте ИИ под себя</p>
       </div>
 
@@ -145,9 +149,75 @@
         <div class="form-actions">
           <button class="primary-btn" id="saveBtn" type="submit">Сохранить</button>
           <button class="secondary-btn" id="cancelBtn" type="button">Отменить</button>
-          <button class="back-btn" id="backBtn" type="button">Назад</button>
         </div>
       </form>
+    </section>
+
+    <section class="app-settings-view" id="appSettingsView" hidden>
+      <div class="management-heading">
+        <div class="heading-row">
+          <button class="back-btn heading-back-btn" id="appSettingsBackBtn" type="button" aria-label="Назад" title="Назад">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          </button>
+          <div>
+            <div class="eyebrow">ИИ автоответчик</div>
+            <h1 class="compact-title">Настройки приложения</h1>
+          </div>
+        </div>
+      </div>
+
+      <div class="app-settings-list">
+        <section class="settings-section">
+          <h2 class="settings-group-title">Оформление</h2>
+          <div class="setting-control">
+            <div class="settings-label">Размер приложения</div>
+            <div class="choice-buttons" role="group" aria-label="Размер приложения">
+              <button class="choice-btn" id="windowedBtn" type="button">Неполноэкранный <span>(Рекомендуется)</span></button>
+              <button class="choice-btn" id="fullscreenBtn" type="button">Полноэкранный</button>
+            </div>
+          </div>
+
+          <div class="setting-control setting-control-separated">
+            <div class="settings-label">Подтверждение перед закрытием приложения</div>
+            <div class="choice-buttons choice-buttons-inline" role="group" aria-label="Подтверждение перед закрытием приложения">
+              <button class="choice-btn" id="closingConfirmOnBtn" type="button">Включить</button>
+              <button class="choice-btn" id="closingConfirmOffBtn" type="button">Выключить</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="settings-section">
+          <h2 class="settings-group-title">ОПТИМИЗАЦИЯ</h2>
+          <div class="setting-control">
+            <div class="settings-label range-label-row">
+              <span>Позиция верхней панели</span>
+              <output id="topbarPositionValue" for="topbarPosition">0 px</output>
+            </div>
+            <input
+              class="settings-range"
+              id="topbarPosition"
+              type="range"
+              min="-20"
+              max="100"
+              step="1"
+              value="0"
+              aria-label="Позиция верхней панели"
+            >
+          </div>
+        </section>
+
+        <section class="settings-section account-section">
+          <h2 class="settings-group-title">Аккаунт</h2>
+          <div class="settings-label">Ваш Telegram ID:</div>
+          <div class="telegram-id-row">
+            <code class="telegram-id" id="telegramId">Не найдено</code>
+            <button class="copy-id-btn" id="copyTelegramIdBtn" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="10" height="10" rx="1"/><path d="M6 15H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v1"/></svg>
+              <span>Скопировать</span>
+            </button>
+          </div>
+        </section>
+      </div>
     </section>
   </main>
 

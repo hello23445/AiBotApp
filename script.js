@@ -5,6 +5,7 @@ const instructions = document.getElementById('instructions');
 const tabs = [...document.querySelectorAll('.tab')];
 const homeView = document.getElementById('homeView');
 const managementView = document.getElementById('managementView');
+const appSettingsView = document.getElementById('appSettingsView');
 const settingsForm = document.getElementById('settingsForm');
 const confirmBackdrop = document.getElementById('confirmBackdrop');
 const commandsList = document.getElementById('commandsList');
@@ -20,14 +21,77 @@ const saveTitle = document.getElementById('saveTitle');
 const saveMessage = document.getElementById('saveMessage');
 const saveErrorClose = document.getElementById('saveErrorClose');
 const saveSuccessClose = document.getElementById('saveSuccessClose');
+const appSettingsBackBtn = document.getElementById('appSettingsBackBtn');
+const windowedBtn = document.getElementById('windowedBtn');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const closingConfirmOnBtn = document.getElementById('closingConfirmOnBtn');
+const closingConfirmOffBtn = document.getElementById('closingConfirmOffBtn');
+const telegramId = document.getElementById('telegramId');
+const copyTelegramIdBtn = document.getElementById('copyTelegramIdBtn');
+const topbarPositionInput = document.getElementById('topbarPosition');
+const topbarPositionValue = document.getElementById('topbarPositionValue');
+const telegramWebApp = window.Telegram?.WebApp;
 const webAppUrl = 'https://script.google.com/macros/s/AKfycbwXkAdkTc4n_4FtuAHvxfzJCiDHgkS3rLDZqEAKucp2LvRsKxUGacJuMmxLNQhUk4U17A/exec';
 const maxCommands = 3;
 const maxEmojis = 100;
+const appSettingsKey = 'aiBotAppSettings';
 const emojiSegmenter = typeof Intl.Segmenter === 'function'
   ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
   : null;
 let savedSettings = {};
 let saveCooldownTimer;
+let currentScreen = 'home';
+let appSettingsOrigin = 'home';
+let telegramBackHandler;
+let telegramSettingsHandler;
+
+const telegramUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+  || localStorage.getItem('AdminUserID')
+  || 'Не найдено';
+
+function setTelegramButtonHandler(button, handler, propertyName) {
+  const previousHandler = propertyName === 'back' ? telegramBackHandler : telegramSettingsHandler;
+  if (previousHandler) button.offClick?.(previousHandler);
+  button.onClick?.(handler);
+  if (propertyName === 'back') {
+    telegramBackHandler = handler;
+  } else {
+    telegramSettingsHandler = handler;
+  }
+}
+
+function syncTelegramButtons() {
+  const modalIsOpen = !modalBackdrop.hidden;
+  const appSettingsAreOpen = !appSettingsView.hidden;
+  const managementIsOpen = !managementView.hidden;
+  const shouldShowBackButton = modalIsOpen || appSettingsAreOpen || managementIsOpen;
+  const shouldShowSettingsButton = !modalIsOpen && !appSettingsAreOpen && !managementIsOpen;
+
+  settingsBtn.disabled = appSettingsAreOpen;
+
+  if (telegramWebApp?.BackButton) {
+    if (shouldShowBackButton) {
+      const handler = modalIsOpen
+        ? closeModal
+        : appSettingsAreOpen
+          ? closeAppSettings
+          : requestCloseManagement;
+      setTelegramButtonHandler(telegramWebApp.BackButton, handler, 'back');
+      telegramWebApp.BackButton.show?.();
+    } else {
+      telegramWebApp.BackButton.hide?.();
+    }
+  }
+
+  if (telegramWebApp?.SettingsButton) {
+    if (shouldShowSettingsButton) {
+      setTelegramButtonHandler(telegramWebApp.SettingsButton, () => openAppSettings(currentScreen), 'settings');
+      telegramWebApp.SettingsButton.show?.();
+    } else {
+      telegramWebApp.SettingsButton.hide?.();
+    }
+  }
+}
 
 const steps = {
   iphone: {
@@ -92,6 +156,7 @@ function openModal() {
 
   modalBackdrop.hidden = false;
   document.body.style.overflow = 'hidden';
+  syncTelegramButtons();
 
   const video = instructions.querySelector('video');
 
@@ -101,6 +166,7 @@ function openModal() {
 function closeModal() {
   modalBackdrop.hidden = true;
   document.body.style.overflow = '';
+  syncTelegramButtons();
 }
 
 connectBtn.addEventListener('click', openModal);
@@ -156,7 +222,7 @@ function getSelectedText(name, customName) {
 
 function buildBusinessPayload(settings) {
   return {
-    business_id: window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '6434781065',
+    business_id: window.Telegram?.WebApp?.initDataUnsafe?.user?.id || localStorage.getItem('AdminUserID') || '',
     B: getSelectedText('greetingMode', 'customGreeting'),
     C: getSelectedText('thinkingMode', 'customThinking'),
     D: getSelectedText('unknownAnswerMode', 'customUnknownAnswer'),
@@ -431,11 +497,128 @@ function openManagement() {
   applySettings(savedSettings);
   homeView.hidden = true;
   managementView.hidden = false;
+  currentScreen = 'management';
+  syncTelegramButtons();
 }
 
 function closeManagement() {
   managementView.hidden = true;
   homeView.hidden = false;
+  currentScreen = 'home';
+  syncTelegramButtons();
+}
+
+function openAppSettings(origin = currentScreen) {
+  appSettingsOrigin = origin === 'management' ? 'management' : 'home';
+  homeView.hidden = true;
+  managementView.hidden = true;
+  appSettingsView.hidden = false;
+  telegramId.textContent = telegramUserId;
+  applyAppSettings();
+  syncTelegramButtons();
+}
+
+function closeAppSettings() {
+  appSettingsView.hidden = true;
+  managementView.hidden = appSettingsOrigin !== 'management';
+  homeView.hidden = appSettingsOrigin === 'management';
+  currentScreen = appSettingsOrigin;
+  syncTelegramButtons();
+}
+
+function getAppSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(appSettingsKey) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveAppSettings(settings) {
+  localStorage.setItem(appSettingsKey, JSON.stringify(settings));
+}
+
+function applyAppSettings() {
+  const settings = getAppSettings();
+  const isFullscreen = settings.size === 'fullscreen';
+  const closingConfirmation = settings.closingConfirmation !== false;
+  const topbarPosition = Math.min(100, Math.max(-20, Number(settings.topbarPosition) || 0));
+  windowedBtn.classList.toggle('active', !isFullscreen);
+  fullscreenBtn.classList.toggle('active', isFullscreen);
+  windowedBtn.setAttribute('aria-pressed', String(!isFullscreen));
+  fullscreenBtn.setAttribute('aria-pressed', String(isFullscreen));
+  closingConfirmOnBtn.classList.toggle('active', closingConfirmation);
+  closingConfirmOffBtn.classList.toggle('active', !closingConfirmation);
+  closingConfirmOnBtn.setAttribute('aria-pressed', String(closingConfirmation));
+  closingConfirmOffBtn.setAttribute('aria-pressed', String(!closingConfirmation));
+  topbarPositionInput.value = String(topbarPosition);
+  topbarPositionValue.value = `${topbarPosition} px`;
+  topbarPositionValue.textContent = `${topbarPosition} px`;
+  document.documentElement.style.setProperty('--topbar-position', `${topbarPosition}px`);
+}
+
+function setTopbarPosition(value) {
+  const settings = getAppSettings();
+  settings.topbarPosition = Number(value);
+  saveAppSettings(settings);
+  applyAppSettings();
+}
+
+function setClosingConfirmation(enabled) {
+  const settings = getAppSettings();
+  settings.closingConfirmation = enabled;
+  saveAppSettings(settings);
+  applyAppSettings();
+  if (enabled) {
+    window.Telegram?.WebApp?.enableClosingConfirmation?.();
+  } else {
+    window.Telegram?.WebApp?.disableClosingConfirmation?.();
+  }
+}
+
+async function copyTelegramId() {
+  try {
+    await navigator.clipboard.writeText(telegramId.textContent);
+  } catch {
+    const fallback = document.createElement('textarea');
+    fallback.value = telegramId.textContent;
+    fallback.setAttribute('readonly', '');
+    fallback.style.position = 'fixed';
+    fallback.style.opacity = '0';
+    document.body.append(fallback);
+    fallback.select();
+    document.execCommand('copy');
+    fallback.remove();
+  }
+
+  copyTelegramIdBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>
+    <span>Скопировано!</span>
+  `;
+  copyTelegramIdBtn.disabled = true;
+  setTimeout(() => {
+    copyTelegramIdBtn.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="10" height="10" rx="1"/><path d="M6 15H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v1"/></svg>
+      <span>Скопировать</span>
+    `;
+    copyTelegramIdBtn.disabled = false;
+  }, 3000);
+}
+
+async function setFullscreen(enabled) {
+  const settings = getAppSettings();
+  settings.size = enabled ? 'fullscreen' : 'windowed';
+  saveAppSettings(settings);
+  applyAppSettings();
+  if (enabled) {
+    await Promise.resolve(window.Telegram?.WebApp?.requestFullscreen?.()).catch(error => {
+      console.error('Не удалось включить полноэкранный режим:', error);
+    });
+  } else {
+    await Promise.resolve(window.Telegram?.WebApp?.exitFullscreen?.()).catch(error => {
+      console.error('Не удалось выключить полноэкранный режим:', error);
+    });
+  }
 }
 
 function requestCloseManagement() {
@@ -454,6 +637,14 @@ function keepEditing() {
 }
 
 document.getElementById('manageBtn').addEventListener('click', openManagement);
+document.getElementById('settingsBtn').addEventListener('click', () => openAppSettings(currentScreen));
+appSettingsBackBtn.addEventListener('click', closeAppSettings);
+windowedBtn.addEventListener('click', () => setFullscreen(false));
+fullscreenBtn.addEventListener('click', () => setFullscreen(true));
+closingConfirmOnBtn.addEventListener('click', () => setClosingConfirmation(true));
+closingConfirmOffBtn.addEventListener('click', () => setClosingConfirmation(false));
+copyTelegramIdBtn.addEventListener('click', copyTelegramId);
+topbarPositionInput.addEventListener('input', event => setTopbarPosition(event.target.value));
 addCommandBtn.addEventListener('click', () => {
   if (commandsList.querySelectorAll('.command-row').length < maxCommands) {
     createCommandRow();
@@ -538,7 +729,10 @@ document.getElementById('confirmDiscard').addEventListener('click', () => {
   closeManagement();
 });
 
-document.getElementById('settingsBtn').addEventListener('click', () => {
-  // Кнопка настроек присутствует по требованию.
-  // Отдельное меню не добавляем.
-});
+if (getAppSettings().closingConfirmation !== false) {
+  window.Telegram?.WebApp?.enableClosingConfirmation?.();
+} else {
+  window.Telegram?.WebApp?.disableClosingConfirmation?.();
+}
+applyAppSettings();
+syncTelegramButtons();
