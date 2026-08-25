@@ -236,6 +236,12 @@ function readSettings() {
   return settings;
 }
 
+function removeTrailingWhitespaceFromFields() {
+  settingsForm.querySelectorAll('input, textarea').forEach(field => {
+    field.value = field.value.replace(/\s+$/, '');
+  });
+}
+
 function getSelectedText(name, customName) {
   const selected = settingsForm.querySelector(`input[name="${name}"]:checked`);
   if (selected?.value === 'custom') return settingsForm.elements[customName].value;
@@ -850,6 +856,7 @@ settingsForm.elements.aiData.addEventListener('input', () => {
 });
 settingsForm.addEventListener('submit', event => {
   event.preventDefault();
+  removeTrailingWhitespaceFromFields();
   if (!updateCommandValidity()) {
     settingsForm.reportValidity();
     return;
