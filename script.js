@@ -526,7 +526,7 @@ function closeAppSettings() {
   syncTelegramButtons();
 }
 
-function getAppSettings() {
+function getLocalAppSettings() {
   try {
     return JSON.parse(localStorage.getItem(appSettingsKey) || '{}');
   } catch {
@@ -534,12 +534,51 @@ function getAppSettings() {
   }
 }
 
-function saveAppSettings(settings) {
-  localStorage.setItem(appSettingsKey, JSON.stringify(settings));
+function getTelegramCloudStorage() {
+  return window.Telegram?.WebApp?.CloudStorage;
 }
 
-function applyAppSettings() {
-  const settings = getAppSettings();
+function getCloudStorageItem(key) {
+  const cloudStorage = getTelegramCloudStorage();
+  if (!cloudStorage?.getItem) return Promise.resolve(null);
+
+  return new Promise(resolve => {
+    cloudStorage.getItem(key, (error, value) => resolve(error ? null : value));
+  });
+}
+
+function setCloudStorageItem(key, value) {
+  const cloudStorage = getTelegramCloudStorage();
+  if (!cloudStorage?.setItem) return Promise.resolve(false);
+
+  return new Promise(resolve => {
+    cloudStorage.setItem(key, value, error => resolve(!error));
+  });
+}
+
+async function getAppSettings() {
+  const cloudValue = await getCloudStorageItem(appSettingsKey);
+  if (cloudValue) {
+    try {
+      const settings = JSON.parse(cloudValue);
+      localStorage.setItem(appSettingsKey, cloudValue);
+      return settings;
+    } catch {
+      return {};
+    }
+  }
+
+  return getLocalAppSettings();
+}
+
+async function saveAppSettings(settings) {
+  const value = JSON.stringify(settings);
+  localStorage.setItem(appSettingsKey, value);
+  await setCloudStorageItem(appSettingsKey, value);
+}
+
+async function applyAppSettings() {
+  const settings = await getAppSettings();
   const isFullscreen = settings.size === 'fullscreen';
   const closingConfirmation = settings.closingConfirmation !== false;
   const topbarPosition = Math.min(100, Math.max(-20, Number(settings.topbarPosition) || 0));
@@ -557,18 +596,18 @@ function applyAppSettings() {
   document.documentElement.style.setProperty('--topbar-position', `${topbarPosition}px`);
 }
 
-function setTopbarPosition(value) {
-  const settings = getAppSettings();
+async function setTopbarPosition(value) {
+  const settings = await getAppSettings();
   settings.topbarPosition = Number(value);
-  saveAppSettings(settings);
-  applyAppSettings();
+  await saveAppSettings(settings);
+  await applyAppSettings();
 }
 
-function setClosingConfirmation(enabled) {
-  const settings = getAppSettings();
+async function setClosingConfirmation(enabled) {
+  const settings = await getAppSettings();
   settings.closingConfirmation = enabled;
-  saveAppSettings(settings);
-  applyAppSettings();
+  await saveAppSettings(settings);
+  await applyAppSettings();
   if (enabled) {
     window.Telegram?.WebApp?.enableClosingConfirmation?.();
   } else {
@@ -606,10 +645,10 @@ async function copyTelegramId() {
 }
 
 async function setFullscreen(enabled) {
-  const settings = getAppSettings();
+  const settings = await getAppSettings();
   settings.size = enabled ? 'fullscreen' : 'windowed';
-  saveAppSettings(settings);
-  applyAppSettings();
+  await saveAppSettings(settings);
+  await applyAppSettings();
   if (enabled) {
     await Promise.resolve(window.Telegram?.WebApp?.requestFullscreen?.()).catch(error => {
       console.error('Не удалось включить полноэкранный режим:', error);
@@ -729,10 +768,15 @@ document.getElementById('confirmDiscard').addEventListener('click', () => {
   closeManagement();
 });
 
-if (getAppSettings().closingConfirmation !== false) {
-  window.Telegram?.WebApp?.enableClosingConfirmation?.();
-} else {
-  window.Telegram?.WebApp?.disableClosingConfirmation?.();
+async function initializeAppSettings() {
+  const settings = await getAppSettings();
+  if (settings.closingConfirmation !== false) {
+    window.Telegram?.WebApp?.enableClosingConfirmation?.();
+  } else {
+    window.Telegram?.WebApp?.disableClosingConfirmation?.();
+  }
+  await applyAppSettings();
 }
-applyAppSettings();
+
+initializeAppSettings();
 syncTelegramButtons();
