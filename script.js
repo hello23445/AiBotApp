@@ -649,14 +649,21 @@ async function setFullscreen(enabled) {
   settings.size = enabled ? 'fullscreen' : 'windowed';
   await saveAppSettings(settings);
   await applyAppSettings();
-  if (enabled) {
-    await Promise.resolve(window.Telegram?.WebApp?.requestFullscreen?.()).catch(error => {
-      console.error('Не удалось включить полноэкранный режим:', error);
-    });
-  } else {
-    await Promise.resolve(window.Telegram?.WebApp?.exitFullscreen?.()).catch(error => {
-      console.error('Не удалось выключить полноэкранный режим:', error);
-    });
+  await applyFullscreenMode(enabled);
+}
+
+async function applyFullscreenMode(enabled) {
+  if (!telegramWebApp) return;
+
+  try {
+    telegramWebApp.ready?.();
+    if (enabled) {
+      telegramWebApp.requestFullscreen?.();
+    } else {
+      telegramWebApp.exitFullscreen?.();
+    }
+  } catch (error) {
+    console.error('Не удалось применить полноэкранный режим:', error);
   }
 }
 
@@ -776,17 +783,9 @@ async function initializeAppSettings() {
     window.Telegram?.WebApp?.disableClosingConfirmation?.();
   }
   await applyAppSettings();
-
-  if (settings.size === 'fullscreen') {
-    await Promise.resolve(window.Telegram?.WebApp?.requestFullscreen?.()).catch(error => {
-      console.error('Не удалось восстановить полноэкранный режим:', error);
-    });
-  } else {
-    await Promise.resolve(window.Telegram?.WebApp?.exitFullscreen?.()).catch(error => {
-      console.error('Не удалось восстановить оконный режим:', error);
-    });
-  }
+  await applyFullscreenMode(settings.size === 'fullscreen');
 }
 
+telegramWebApp?.ready?.();
 initializeAppSettings();
 syncTelegramButtons();
