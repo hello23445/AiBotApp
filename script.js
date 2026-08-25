@@ -6,11 +6,19 @@ const tabs = [...document.querySelectorAll('.tab')];
 const homeView = document.getElementById('homeView');
 const managementView = document.getElementById('managementView');
 const appSettingsView = document.getElementById('appSettingsView');
+const statisticsView = document.getElementById('statisticsView');
 const settingsForm = document.getElementById('settingsForm');
 const confirmBackdrop = document.getElementById('confirmBackdrop');
 const commandsList = document.getElementById('commandsList');
 const addCommandBtn = document.getElementById('addCommandBtn');
 const addCommandLabel = document.getElementById('addCommandLabel');
+const statisticsBtn = document.getElementById('statisticsBtn');
+const statisticsBackBtn = document.getElementById('statisticsBackBtn');
+const statisticsPanel = document.getElementById('statisticsPanel');
+const statisticsLoader = document.getElementById('statisticsLoader');
+const clientsCount = document.getElementById('clientsCount');
+const statisticsRefreshBtn = document.getElementById('statisticsRefreshBtn');
+const statisticsCooldown = document.getElementById('statisticsCooldown');
 const saveButton = document.getElementById('saveBtn');
 const savedSettingsKey = 'aiBotSettings';
 const lastSaveKey = 'aiBotLastSaveAt';
@@ -35,6 +43,9 @@ const webAppUrl = 'https://script.google.com/macros/s/AKfycbwXkAdkTc4n_4FtuAHvxf
 const maxCommands = 3;
 const maxEmojis = 100;
 const appSettingsKey = 'aiBotAppSettings';
+const statisticsUrl = 'https://script.google.com/macros/s/AKfycbySGHQYOncTSopLghMgR0Q_Y6z3gTft-hWpWt5zEmMAnvOr-MF-40cTlbOgf4MCRpVHXg/exec';
+const statisticsCachePrefix = 'aiBotStatistics_';
+const statisticsCooldownMs = 2 * 60 * 1000;
 const emojiSegmenter = typeof Intl.Segmenter === 'function'
   ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
   : null;
@@ -44,6 +55,8 @@ let currentScreen = 'home';
 let appSettingsOrigin = 'home';
 let telegramBackHandler;
 let telegramSettingsHandler;
+let statisticsOrigin = 'home';
+let statisticsCooldownTimer;
 
 const telegramUserId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id
   || localStorage.getItem('AdminUserID')
@@ -63,11 +76,12 @@ function setTelegramButtonHandler(button, handler, propertyName) {
 function syncTelegramButtons() {
   const modalIsOpen = !modalBackdrop.hidden;
   const appSettingsAreOpen = !appSettingsView.hidden;
+  const statisticsAreOpen = !statisticsView.hidden;
   const managementIsOpen = !managementView.hidden;
-  const shouldShowBackButton = modalIsOpen || appSettingsAreOpen || managementIsOpen;
-  const shouldShowSettingsButton = !modalIsOpen && !appSettingsAreOpen && !managementIsOpen;
+  const shouldShowBackButton = modalIsOpen || appSettingsAreOpen || statisticsAreOpen || managementIsOpen;
+  const shouldShowSettingsButton = !modalIsOpen && !appSettingsAreOpen && !statisticsAreOpen && !managementIsOpen;
 
-  settingsBtn.disabled = appSettingsAreOpen;
+  settingsBtn.disabled = appSettingsAreOpen || statisticsAreOpen;
 
   if (telegramWebApp?.BackButton) {
     if (shouldShowBackButton) {
@@ -75,7 +89,9 @@ function syncTelegramButtons() {
         ? closeModal
         : appSettingsAreOpen
           ? closeAppSettings
-          : requestCloseManagement;
+          : statisticsAreOpen
+            ? closeStatistics
+            : requestCloseManagement;
       setTelegramButtonHandler(telegramWebApp.BackButton, handler, 'back');
       telegramWebApp.BackButton.show?.();
     } else {
@@ -508,10 +524,126 @@ function closeManagement() {
   syncTelegramButtons();
 }
 
+function getStatisticsUserId() {
+  return window.Telegram?.WebApp?.initDataUnsafe?.user?.id
+    || localStorage.getItem('AdminUserID')
+    || '';
+}
+
+function getStatisticsCacheKey() {
+  return `${statisticsCachePrefix}${getStatisticsUserId() || 'unknown'}`;
+}
+
+function getStatisticsCache() {
+  try {
+    return JSON.parse(localStorage.getItem(getStatisticsCacheKey()) || 'null');
+  } catch {
+    return null;
+  }
+}
+
+function formatStatisticsCooldown(milliseconds) {
+  const totalSeconds = Math.ceil(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = String(totalSeconds % 60).padStart(2, '0');
+  return `${minutes}:${seconds}`;
+}
+
+function updateStatisticsCooldown() {
+  clearTimeout(statisticsCooldownTimer);
+  const cache = getStatisticsCache();
+  const remaining = cache ? statisticsCooldownMs - (Date.now() - cache.savedAt) : 0;
+  const hasCooldown = remaining > 0;
+  statisticsRefreshBtn.disabled = hasCooldown;
+  statisticsCooldown.hidden = !hasCooldown;
+  statisticsCooldown.textContent = hasCooldown
+    ? `Обновить можно через ${formatStatisticsCooldown(remaining)}`
+    : '';
+
+  if (hasCooldown) {
+    statisticsCooldownTimer = setTimeout(updateStatisticsCooldown, Math.min(remaining, 1000));
+  }
+}
+
+function showStatisticsCache(cache) {
+  clientsCount.textContent = parseStatisticsResponse(String(cache.value ?? ''));
+  statisticsLoader.hidden = true;
+  statisticsPanel.hidden = false;
+  updateStatisticsCooldown();
+}
+
+function parseStatisticsResponse(responseText) {
+  const text = responseText.trim();
+  let value = text;
+
+  try {
+    const data = JSON.parse(text);
+    value = typeof data === 'number' || typeof data === 'string'
+      ? data
+      : data?.clients ?? data?.count ?? data?.value ?? data?.total ?? data?.['Значение'];
+  } catch {
+    value = text.replace(/^(?:значение|value|clients|count|total)\s*:\s*/i, '');
+  }
+
+  return value === null || value === undefined || String(value).trim() === '' ? 0 : value;
+}
+
+async function loadStatistics(force = false) {
+  const cache = getStatisticsCache();
+  const cacheIsFresh = cache && Date.now() - cache.savedAt < statisticsCooldownMs;
+  if (!force && cacheIsFresh) {
+    showStatisticsCache(cache);
+    return;
+  }
+
+  statisticsPanel.hidden = true;
+  statisticsLoader.hidden = false;
+  statisticsRefreshBtn.disabled = true;
+
+  try {
+    const userId = getStatisticsUserId();
+    const url = `${statisticsUrl}?id=${encodeURIComponent(userId)}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const value = parseStatisticsResponse(await response.text());
+    const nextCache = { value, savedAt: Date.now() };
+    localStorage.setItem(getStatisticsCacheKey(), JSON.stringify(nextCache));
+    showStatisticsCache(nextCache);
+  } catch (error) {
+    console.error('Не удалось загрузить статистику:', error);
+    statisticsLoader.hidden = true;
+    statisticsPanel.hidden = false;
+    clientsCount.textContent = '0';
+    statisticsRefreshBtn.disabled = false;
+  }
+}
+
+function openStatistics(origin = currentScreen) {
+  statisticsOrigin = origin === 'management' ? 'management' : 'home';
+  homeView.hidden = true;
+  managementView.hidden = true;
+  appSettingsView.hidden = true;
+  statisticsView.hidden = false;
+  currentScreen = 'statistics';
+  const cache = getStatisticsCache();
+  if (cache) showStatisticsCache(cache);
+  else loadStatistics();
+  syncTelegramButtons();
+}
+
+function closeStatistics() {
+  statisticsView.hidden = true;
+  managementView.hidden = statisticsOrigin !== 'management';
+  homeView.hidden = statisticsOrigin === 'management';
+  currentScreen = statisticsOrigin;
+  syncTelegramButtons();
+}
+
 function openAppSettings(origin = currentScreen) {
   appSettingsOrigin = origin === 'management' ? 'management' : 'home';
   homeView.hidden = true;
   managementView.hidden = true;
+  statisticsView.hidden = true;
   appSettingsView.hidden = false;
   telegramId.textContent = telegramUserId;
   applyAppSettings();
@@ -648,6 +780,9 @@ function keepEditing() {
 }
 
 document.getElementById('manageBtn').addEventListener('click', openManagement);
+statisticsBtn.addEventListener('click', () => openStatistics(currentScreen));
+statisticsBackBtn.addEventListener('click', closeStatistics);
+statisticsRefreshBtn.addEventListener('click', () => loadStatistics(true));
 document.getElementById('settingsBtn').addEventListener('click', () => openAppSettings(currentScreen));
 appSettingsBackBtn.addEventListener('click', closeAppSettings);
 windowedBtn.addEventListener('click', () => setFullscreen(false));

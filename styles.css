@@ -253,6 +253,47 @@ h1 {
   animation: view-in .22s ease-out;
 }
 
+.statistics-view {
+  animation: view-in .22s ease-out;
+}
+
+.statistics-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.statistics-label {
+  color: #f4f7ff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.statistics-value {
+  color: #dfe5f3;
+  font-size: 16px;
+  margin-top: 16px;
+}
+
+.statistics-value strong {
+  color: #fff;
+}
+
+.statistics-refresh-btn {
+  margin-top: 22px;
+}
+
+.statistics-cooldown {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.statistics-loader {
+  padding: 40px 0;
+}
+
 @keyframes view-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }

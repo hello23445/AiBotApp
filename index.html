@@ -47,6 +47,12 @@
         <span class="item-label">Управление ботом</span>
         <span class="chevron">›</span>
       </button>
+
+      <button class="menu-item" id="statisticsBtn">
+        <span class="item-icon statistics">▥</span>
+        <span class="item-label">Статистика</span>
+        <span class="chevron">›</span>
+      </button>
       </section>
     </section>
 
@@ -151,6 +157,31 @@
           <button class="secondary-btn" id="cancelBtn" type="button">Отменить</button>
         </div>
       </form>
+    </section>
+
+    <section class="statistics-view" id="statisticsView" hidden>
+      <div class="management-heading">
+        <div class="heading-row">
+          <button class="back-btn heading-back-btn" id="statisticsBackBtn" type="button" aria-label="Назад" title="Назад">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
+          </button>
+          <div>
+            <div class="eyebrow">ИИ автоответчик</div>
+            <h1 class="compact-title">Статистика</h1>
+          </div>
+        </div>
+      </div>
+
+      <section class="statistics-panel" id="statisticsPanel" hidden>
+        <div class="statistics-label">Статистика:</div>
+        <div class="statistics-value">Клиентов: <strong id="clientsCount"></strong></div>
+        <button class="primary-btn statistics-refresh-btn" id="statisticsRefreshBtn" type="button">Обновить</button>
+        <div class="statistics-cooldown" id="statisticsCooldown" hidden></div>
+      </section>
+
+      <div class="statistics-loader" id="statisticsLoader" hidden>
+        <div class="save-loader" aria-hidden="true"></div>
+      </div>
     </section>
 
     <section class="app-settings-view" id="appSettingsView" hidden>
