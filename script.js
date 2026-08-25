@@ -776,6 +776,16 @@ async function initializeAppSettings() {
     window.Telegram?.WebApp?.disableClosingConfirmation?.();
   }
   await applyAppSettings();
+
+  if (settings.size === 'fullscreen') {
+    await Promise.resolve(window.Telegram?.WebApp?.requestFullscreen?.()).catch(error => {
+      console.error('Не удалось восстановить полноэкранный режим:', error);
+    });
+  } else {
+    await Promise.resolve(window.Telegram?.WebApp?.exitFullscreen?.()).catch(error => {
+      console.error('Не удалось восстановить оконный режим:', error);
+    });
+  }
 }
 
 initializeAppSettings();
