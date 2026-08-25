@@ -113,6 +113,7 @@ const steps = {
   iphone: {
     title: 'iPhone:',
     video: 'explain_iphone.MP4',
+    youtubeUrl: 'https://youtube.com/shorts/ZfEwLKaDSP4?feature=share',
 
     items: [
       'Откройте Telegram',
@@ -128,6 +129,7 @@ const steps = {
   android: {
     title: 'Android & Windows:',
     video: 'explain_android_windows.MP4',
+    youtubeUrl: 'https://youtu.be/V6uJofYnBqw',
 
     items: [
       'Откройте Telegram.',
@@ -164,6 +166,10 @@ function renderInstructions(platform = 'iphone') {
     <ol class="step-list">
       ${data.items.map(item => `<li>${item}</li>`).join('')}
     </ol>
+
+    <a class="youtube-instruction-btn secondary-btn" href="${data.youtubeUrl}" target="_blank" rel="noopener noreferrer">
+      Посмотреть инструкцию на YouTube
+    </a>
   `;
 }
 
@@ -619,6 +625,8 @@ async function loadStatistics(force = false) {
 }
 
 function openStatistics(origin = currentScreen) {
+  if (!statisticsView.hidden) return;
+
   statisticsOrigin = origin === 'management' ? 'management' : 'home';
   homeView.hidden = true;
   managementView.hidden = true;
@@ -781,6 +789,12 @@ function keepEditing() {
 
 document.getElementById('manageBtn').addEventListener('click', openManagement);
 statisticsBtn.addEventListener('click', () => openStatistics(currentScreen));
+statisticsBtn.addEventListener('pointerup', event => {
+  if (event.pointerType === 'touch') {
+    event.preventDefault();
+    openStatistics(currentScreen);
+  }
+});
 statisticsBackBtn.addEventListener('click', closeStatistics);
 statisticsRefreshBtn.addEventListener('click', () => loadStatistics(true));
 document.getElementById('settingsBtn').addEventListener('click', () => openAppSettings(currentScreen));
@@ -803,6 +817,15 @@ settingsForm.addEventListener('keydown', event => {
     event.preventDefault();
   }
 });
+document.addEventListener('pointerdown', event => {
+  const activeElement = document.activeElement;
+  if (activeElement?.matches('input, textarea') && !event.target.closest('input, textarea')) {
+    activeElement.blur();
+  }
+});
+document.addEventListener('touchmove', event => {
+  if (event.touches.length > 1) event.preventDefault();
+}, { passive: false });
 settingsForm.addEventListener('change', updateDependentInputs);
 settingsForm.elements.customGreeting.addEventListener('input', () => {
   updateCharacterCounter(settingsForm.elements.customGreeting, document.getElementById('greetingCounter'));
