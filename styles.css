@@ -904,6 +904,8 @@ h1 {
   position: fixed;
   inset: 0;
 
+  overflow-y: auto;
+
   background: rgba(2, 7, 16, .72);
   backdrop-filter: blur(8px);
 
@@ -920,11 +922,7 @@ h1 {
 
 .modal {
   width: min(770px, 100%);
-  max-height: min(
-    90vh,
-    900px,
-    calc(90vh - max(var(--topbar-position), calc(var(--topbar-position) * -1)) - max(var(--topbar-position), calc(var(--topbar-position) * -1)))
-  );
+  max-height: min(90vh, 900px);
 
   overflow: auto;
 
