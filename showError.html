@@ -39,6 +39,12 @@
       gap: 15px;
     }
 
+    .response-heading {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
     /* Стили для кода */
     pre {
       background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
@@ -87,6 +93,7 @@
   <div id="status-message">Загрузка данных...</div>
 
   <div id="content-container">
+    <h1 class="response-heading">Полученный ответ</h1>
     <pre><code id="response-code"></code></pre>
     <button id="copy-btn">
       <span id="btn-icon">
@@ -144,7 +151,7 @@
         if (data.status === "success") {
           // Успешно: скрываем статус, показываем блок с ответом
           statusMessage.style.display = 'none';
-          responseCodeElement.textContent = data.response;
+          responseCodeElement.textContent = formatResponse(data.response);
           contentContainer.style.display = 'flex';
         } else {
           showError("Ошибка от сервера: " + (data.message || "Неизвестная ошибка"));
@@ -159,6 +166,67 @@
     function showError(text) {
       statusMessage.textContent = text;
       statusMessage.classList.add('error-text');
+    }
+
+    // Приводим JSON и Python-подобную строку словаря к единому читаемому виду.
+    function formatResponse(response) {
+      if (response && typeof response === 'object') {
+        return JSON.stringify(response, null, 2);
+      }
+
+      const responseText = String(response ?? '').trim();
+
+      try {
+        return JSON.stringify(JSON.parse(responseText), null, 2);
+      } catch (error) {
+        try {
+          return JSON.stringify(JSON.parse(convertSingleQuotedJson(responseText)), null, 2);
+        } catch (conversionError) {
+          return responseText;
+        }
+      }
+    }
+
+    function convertSingleQuotedJson(text) {
+      let result = '';
+      let insideString = false;
+      let quote = '';
+
+      for (let index = 0; index < text.length; index += 1) {
+        const character = text[index];
+        const previousCharacter = text[index - 1];
+        const nextCharacter = text[index + 1];
+
+        if (!insideString && (character === '"' || character === "'")) {
+          insideString = true;
+          quote = character;
+          result += '"';
+          continue;
+        }
+
+        if (insideString && character === quote && previousCharacter !== '\\'
+          && (quote !== "'" || !nextCharacter || /[\s,:\]}]/.test(nextCharacter))) {
+          insideString = false;
+          quote = '';
+          result += '"';
+          continue;
+        }
+
+        if (insideString && quote === "'" && character === '"' && previousCharacter !== '\\') {
+          result += '\\"';
+          continue;
+        }
+
+        if (insideString && quote === "'" && character === '\\' && text[index + 1] === "'") {
+          result += "'";
+          index += 1;
+          continue;
+        }
+
+        result += character;
+      }
+
+      return result;
     }
 
     // 4. Логика кнопки "Скопировать"
