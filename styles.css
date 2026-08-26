@@ -920,7 +920,11 @@ h1 {
 
 .modal {
   width: min(770px, 100%);
-  max-height: min(90vh, 900px);
+  max-height: min(
+    90vh,
+    900px,
+    calc(90vh - max(var(--topbar-position), calc(var(--topbar-position) * -1)) - max(var(--topbar-position), calc(var(--topbar-position) * -1)))
+  );
 
   overflow: auto;
 
@@ -934,6 +938,10 @@ h1 {
 
   box-shadow:
     0 26px 90px rgba(0,0,0,.45);
+}
+
+.connection-modal {
+  transform: translateY(var(--topbar-position));
 }
 
 .modal-close {
