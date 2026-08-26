@@ -507,6 +507,13 @@ h1 {
   font-weight: 400;
 }
 
+.setting-description {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 10px 10px 0;
+}
+
 .permission-title {
   color: #f4f7ff;
   font-size: 14px;
@@ -926,6 +933,10 @@ h1 {
     0 26px 90px rgba(0,0,0,.45);
 }
 
+.connection-modal {
+  transform: translateY(var(--topbar-position));
+}
+
 .modal-close {
   position: absolute;
   top: 16px;
@@ -1067,6 +1078,14 @@ code {
   text-align: center;
   text-decoration: none;
   width: 100%;
+}
+
+.copyable-text {
+  cursor: text;
+  display: inline-block;
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
 }
 
 .platform-label {

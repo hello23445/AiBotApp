@@ -78,6 +78,7 @@
           <label class="radio-option"><input type="radio" name="greetingMode" value="custom"> <span>Другое:</span></label>
           <textarea class="text-input textarea-input dependent-input" id="customGreeting" name="customGreeting" maxlength="500" placeholder="Введите приветствие" disabled></textarea>
           <div class="character-counter" id="greetingCounter" hidden>0/500</div>
+          <p class="setting-description">Как ИИ должен приветствовать клиента при первом обращении.</p>
         </fieldset>
 
         <fieldset class="settings-section">
@@ -87,6 +88,7 @@
           <label class="radio-option"><input type="radio" name="thinkingMode" value="custom"> <span>Другое:</span></label>
           <textarea class="text-input textarea-input dependent-input" id="customThinking" name="customThinking" maxlength="100" placeholder="Введите сообщение" disabled></textarea>
           <div class="character-counter" id="thinkingCounter" hidden>0/100</div>
+          <p class="setting-description">Сообщение, отображаемое пользователю во время генерации ответа ИИ.</p>
         </fieldset>
 
         <fieldset class="settings-section">
@@ -96,6 +98,7 @@
           <label class="radio-option"><input type="radio" name="unknownAnswerMode" value="custom"> <span>Другое</span></label>
           <textarea class="text-input textarea-input dependent-input" id="customUnknownAnswer" name="customUnknownAnswer" maxlength="100" placeholder="Введите сообщение" disabled></textarea>
           <div class="character-counter" id="unknownAnswerCounter" hidden>0/100</div>
+          <p class="setting-description">Текст, который будет отправлен клиенту, если ИИ не смог найти нужную информацию или не знает ответа на вопрос.</p>
         </fieldset>
 
         <fieldset class="settings-section">
@@ -105,6 +108,7 @@
           <label class="radio-option"><input type="radio" name="emojiMode" value="custom"> <span>Использовать только:</span></label>
           <textarea class="text-input textarea-input dependent-input emoji-input" id="customEmoji" name="customEmoji" placeholder="Введите эмодзи" disabled></textarea>
           <div class="character-counter" id="emojiCounter" hidden>0/100</div>
+          <p class="setting-description">Определяет, может ли ИИ использовать эмодзи при формировании ответов пользователю.</p>
         </fieldset>
 
         <fieldset class="settings-section">
@@ -115,6 +119,7 @@
           <label class="radio-option"><input type="radio" name="tone" value="polite"> <span>Вежливый 🤝</span></label>
           <label class="radio-option"><input type="radio" name="tone" value="calm"> <span>Спокойный 🧘</span></label>
           <label class="radio-option"><input type="radio" name="tone" value="brief"> <span>Краткий 📝</span></label>
+          <p class="setting-description">Определяет стиль и манеру общения ИИ с клиентами при формировании ответов.</p>
         </fieldset>
 
         <fieldset class="settings-section">
@@ -125,6 +130,7 @@
           <label class="radio-option"><input type="radio" name="thinkingLevel" value="level2"> <span>Размышление 2-го уровня <small>6–12 секунд</small></span></label>
           <label class="radio-option"><input type="radio" name="thinkingLevel" value="level3"> <span>Размышление 3-го уровня <small>15–20 секунд</small></span></label>
           <label class="radio-option"><input type="radio" name="thinkingLevel" value="maximum"> <span>Максимальное размышление <small>30–40 секунд</small></span></label>
+          <p class="setting-description">Делает ответ более точным и обдуманным.</p>
         </fieldset>
 
         <fieldset class="settings-section">
@@ -132,10 +138,12 @@
           <div class="permission-title">Ссылки от ИИ</div>
           <label class="radio-option"><input type="radio" name="aiLinksPermission" value="allow"> <span>Разрешить</span></label>
           <label class="radio-option"><input type="radio" name="aiLinksPermission" value="deny" checked> <span>Запретить</span></label>
+          <p class="setting-description">Определяет, может ли ИИ добавлять ссылки в ответы на вопросы клиентов.</p>
 
           <div class="permission-title permission-title-spaced">Получать данные пользователя такие как Telegram ID, Имя и Фамилия, @username (если есть) для дальнейшего использования</div>
           <label class="radio-option"><input type="radio" name="userDataPermission" value="allow"> <span>Разрешить</span></label>
           <label class="radio-option"><input type="radio" name="userDataPermission" value="deny" checked> <span>Запретить</span></label>
+          <p class="setting-description">Определяет, может ли ИИ получать и использовать данные пользователя в ответах.</p>
         </fieldset>
 
         <fieldset class="settings-section commands-section">
@@ -144,12 +152,14 @@
           <button class="add-command-btn" id="addCommandBtn" type="button">
             <span aria-hidden="true">+</span> <span id="addCommandLabel">Добавить команду</span>
           </button>
+          <p class="setting-description">Позволяет настроить быстрые команды и ответы ИИ на них.</p>
         </fieldset>
 
         <fieldset class="settings-section">
           <legend>Данные для ИИ <span>(дополнительная информация для ИИ)</span></legend>
           <textarea class="text-input textarea-input" id="aiData" name="aiData" maxlength="500" placeholder="Например: информация о компании, товарах и правилах общения"></textarea>
           <div class="character-counter" id="aiDataCounter">0/500</div>
+          <p class="setting-description">Дополнительная информация о вас/вашей организации, компании, товарах и правилах общения для более точных ответов на вопросы клиентов.</p>
         </fieldset>
 
         <div class="form-actions">
@@ -174,7 +184,7 @@
 
       <section class="statistics-panel" id="statisticsPanel" hidden>
         <div class="statistics-label">Статистика:</div>
-        <div class="statistics-value">Клиентов: <strong id="clientsCount"></strong></div>
+        <div class="statistics-value">Диалогов: <strong id="clientsCount"></strong></div>
         <button class="primary-btn statistics-refresh-btn" id="statisticsRefreshBtn" type="button">Обновить</button>
         <div class="statistics-cooldown" id="statisticsCooldown" hidden></div>
       </section>
@@ -254,7 +264,7 @@
 
   <div class="modal-backdrop" id="modalBackdrop" hidden>
     <section
-      class="modal"
+      class="modal connection-modal"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modalTitle"
