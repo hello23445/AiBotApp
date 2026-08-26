@@ -39,6 +39,10 @@ body {
   min-height: 100vh;
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 button {
   font: inherit;
   color: inherit;
@@ -903,8 +907,7 @@ h1 {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-
-  overflow-y: auto;
+  overflow: hidden;
 
   background: rgba(2, 7, 16, .72);
   backdrop-filter: blur(8px);
@@ -922,9 +925,12 @@ h1 {
 
 .modal {
   width: min(770px, 100%);
-  max-height: min(90vh, 900px);
+  height: min(90vh, 900px);
+  max-height: calc(100dvh - 48px);
 
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 
   background: var(--panel);
   border: 1px solid var(--line);
@@ -939,6 +945,8 @@ h1 {
 }
 
 .connection-modal {
+  align-self: start;
+  max-height: calc(100dvh - 48px - max(0px, var(--topbar-position)));
   transform: translateY(var(--topbar-position));
 }
 
@@ -1085,9 +1093,10 @@ code {
 .copyable-text {
   cursor: text;
   display: inline-block;
-  user-select: text;
-  -webkit-user-select: text;
+  user-select: text !important;
+  -webkit-user-select: text !important;
   -webkit-touch-callout: default;
+  touch-action: auto;
 }
 
 .platform-label {
@@ -1097,6 +1106,10 @@ code {
 }
 
 @media (max-width: 640px) {
+  html {
+    scrollbar-gutter: auto;
+  }
+
   .topbar {
     padding: 0 18px;
   }
@@ -1112,6 +1125,24 @@ code {
   .modal {
     padding: 18px;
     border-radius: 18px;
+  }
+
+  .modal-backdrop {
+    padding: 0;
+  }
+
+  .modal {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .connection-modal {
+    width: 100vw;
+    min-width: 100vw;
+    max-width: none;
+    margin-top: 0;
+    max-height: calc(100dvh - max(0px, var(--topbar-position)));
+    border-radius: 0;
   }
 
   .video-wrap video {

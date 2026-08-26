@@ -177,7 +177,7 @@ function openModal() {
   renderInstructions('iphone');
 
   modalBackdrop.hidden = false;
-  document.body.style.overflow = 'hidden';
+  document.body.classList.add('modal-open');
   syncTelegramButtons();
 
   const video = instructions.querySelector('video');
@@ -187,7 +187,7 @@ function openModal() {
 
 function closeModal() {
   modalBackdrop.hidden = true;
-  document.body.style.overflow = '';
+  document.body.classList.remove('modal-open');
   syncTelegramButtons();
 }
 
