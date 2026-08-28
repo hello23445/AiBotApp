@@ -611,6 +611,11 @@ h1 {
   border-color: var(--accent);
 }
 
+.command-message.is-invalid {
+  border-color: #f27d8b;
+  box-shadow: 0 0 0 2px rgba(242, 125, 139, .12);
+}
+
 .text-input:disabled {
   cursor: not-allowed;
   opacity: .45;
@@ -641,13 +646,13 @@ h1 {
   align-items: center;
   display: grid;
   gap: 8px;
-  grid-template-columns: minmax(120px, .7fr) minmax(180px, 1.4fr) 38px;
+  grid-template-columns: minmax(120px, .7fr) minmax(165px, 1.1fr) 112px 38px;
 }
 
 .command-error {
   color: #f58b98;
   font-size: 12px;
-  grid-column: 1 / span 2;
+  grid-column: 1 / span 3;
   margin-top: -3px;
 }
 
@@ -673,6 +678,16 @@ h1 {
   min-width: 0;
 }
 
+.command-type,
+.command-action {
+  margin-top: 0;
+  min-width: 0;
+}
+
+.command-action {
+  color: #dfe6ff;
+}
+
 .command-name-wrap:focus-within {
   border-color: var(--accent);
 }
@@ -691,6 +706,8 @@ h1 {
   display: inline-flex;
   height: 42px;
   justify-content: center;
+  grid-column: 4;
+  grid-row: 1;
   transition: background .18s ease, transform .18s ease;
   width: 38px;
 }
@@ -923,6 +940,11 @@ h1 {
   display: none;
 }
 
+.modal-backdrop#confirmBackdrop,
+.modal-backdrop#saveBackdrop {
+  align-items: center;
+}
+
 .modal {
   width: min(770px, 100%);
   height: min(90vh, 900px);
@@ -942,6 +964,19 @@ h1 {
 
   box-shadow:
     0 26px 90px rgba(0,0,0,.45);
+}
+
+.modal:not(.connection-modal) {
+  height: auto;
+  max-height: calc(100dvh - 48px);
+}
+
+.modal:not(.connection-modal).confirm-modal {
+  width: min(480px, 100%);
+}
+
+.modal:not(.connection-modal).save-modal {
+  width: min(390px, 100%);
 }
 
 .connection-modal {
@@ -1131,9 +1166,24 @@ code {
     padding: 0;
   }
 
-  .modal {
-    height: 100dvh;
-    max-height: 100dvh;
+  .modal-backdrop#confirmBackdrop,
+  .modal-backdrop#saveBackdrop {
+    align-items: end;
+    padding: 16px;
+  }
+
+  .modal-backdrop#saveBackdrop {
+    align-items: center;
+  }
+
+  .modal:not(.connection-modal) {
+    width: 100%;
+    max-height: calc(100dvh - 32px);
+  }
+
+  .save-modal {
+    height: auto;
+    max-height: calc(100dvh - 32px);
   }
 
   .connection-modal {
@@ -1168,7 +1218,8 @@ code {
   }
 
   .command-name-wrap,
-  .command-message {
+  .command-type,
+  .command-message-control {
     grid-column: 1;
   }
 
@@ -1178,7 +1229,7 @@ code {
 
   .delete-command-btn {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
   }
 
   .heading-row {

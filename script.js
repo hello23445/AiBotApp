@@ -42,6 +42,13 @@ const telegramWebApp = window.Telegram?.WebApp;
 const webAppUrl = 'https://script.google.com/macros/s/AKfycbwXkAdkTc4n_4FtuAHvxfzJCiDHgkS3rLDZqEAKucp2LvRsKxUGacJuMmxLNQhUk4U17A/exec';
 const maxCommands = 3;
 const maxEmojis = 100;
+const commandActions = [
+  'Завершить диалог с клиентом',
+  'Передача диалога менеджеру',
+  'Перезапустить бота',
+  'Повторить последний запрос клиента',
+  'Вернуть диалог ИИ'
+];
 const appSettingsKey = 'aiBotAppSettings';
 const statisticsUrl = 'https://script.google.com/macros/s/AKfycbySGHQYOncTSopLghMgR0Q_Y6z3gTft-hWpWt5zEmMAnvOr-MF-40cTlbOgf4MCRpVHXg/exec';
 const statisticsCachePrefix = 'aiBotStatistics_';
@@ -231,7 +238,7 @@ function readSettings() {
   const settings = Object.fromEntries(new FormData(settingsForm).entries());
   settings.commands = [...commandsList.querySelectorAll('.command-row')].map(row => ({
     command: row.querySelector('.command-input').value,
-    message: row.querySelector('.command-message').value
+    message: row.querySelector('.command-message-control:not([disabled])').value
   }));
   return settings;
 }
@@ -269,6 +276,7 @@ function buildBusinessPayload(settings) {
 function showSaveLoader() {
   saveLoader.hidden = false;
   saveErrorClose.hidden = true;
+  saveSuccessClose.hidden = true;
   saveTitle.textContent = 'Сохраняем настройки';
   saveMessage.textContent = 'Пожалуйста, подождите.';
   saveBackdrop.hidden = false;
@@ -367,16 +375,23 @@ function updateCommandValidity() {
   let isValid = true;
   inputs.forEach(input => {
     const row = input.closest('.command-row');
-    const messageInput = row.querySelector('.command-message');
+    const messageInput = row.querySelector('.command-message-control:not([disabled])');
+    const typeSelect = row.querySelector('.command-type');
     const isDuplicate = input.value && commandCounts[input.value] > 1;
     const hasBoundaryUnderscore = /^_|_$/.test(input.value);
+    const isActionNameInMessage = typeSelect.value === 'message'
+      && commandActions.includes(messageInput.value.trim());
     const errorMessage = hasBoundaryUnderscore
       ? 'Символ _ нельзя использовать в начале или конце команды.'
       : isDuplicate
         ? 'Такая команда уже добавлена.'
+        : isActionNameInMessage
+          ? 'В сообщении нельзя использовать название действия.'
         : '';
-    input.setCustomValidity(errorMessage);
-    input.classList.toggle('is-invalid', Boolean(errorMessage));
+    input.setCustomValidity(isActionNameInMessage ? '' : errorMessage);
+    messageInput.setCustomValidity(isActionNameInMessage ? errorMessage : '');
+    input.classList.toggle('is-invalid', Boolean(errorMessage) && !isActionNameInMessage);
+    messageInput.classList.toggle('is-invalid', isActionNameInMessage);
     row.querySelector('.command-error').textContent = errorMessage;
     row.querySelector('.command-error').hidden = !errorMessage;
     if (errorMessage || !input.value.trim() || !messageInput.value.trim()) isValid = false;
@@ -441,23 +456,51 @@ function refreshSaveCooldown() {
 function createCommandRow(command = '', message = '') {
   const row = document.createElement('div');
   row.className = 'command-row';
+  const isAction = commandActions.includes(message);
+  const actionOptions = commandActions
+    .map(action => `<option value="${action}"${action === message ? ' selected' : ''}>${action}</option>`)
+    .join('');
   row.innerHTML = `
     <div class="command-name-wrap">
       <span class="command-prefix" aria-hidden="true">/</span>
       <input class="text-input command-input" type="text" maxlength="20" pattern="[a-z_]+" inputmode="lowercase" aria-label="Название команды" placeholder="команда" value="${command}">
     </div>
-    <input class="text-input command-message" type="text" maxlength="200" aria-label="Сообщение команды" placeholder="Сообщение команды" value="${message}">
+    <input class="text-input command-message-control command-message" type="text" maxlength="200" aria-label="Сообщение команды" placeholder="Сообщение команды" value="${message}">
+    <select class="text-input command-message-control command-action" aria-label="Действие" disabled>
+      <option value="" selected disabled>Действие</option>
+      ${actionOptions}
+    </select>
+    <select class="text-input command-type" aria-label="Тип команды">
+      <option value="message" selected>Сообщение</option>
+      <option value="action">Действие</option>
+    </select>
     <div class="command-error" hidden></div>
     <button class="delete-command-btn" type="button" aria-label="Удалить команду" title="Удалить команду">
       <i class="fa-solid fa-trash" style="color: rgb(116, 192, 252);"></i>
     </button>
   `;
 
+  const typeSelect = row.querySelector('.command-type');
+  const messageInput = row.querySelector('.command-message');
+  const actionSelect = row.querySelector('.command-action');
+  typeSelect.value = isAction ? 'action' : 'message';
+
+  const updateCommandControl = () => {
+    const actionMode = typeSelect.value === 'action';
+    messageInput.hidden = actionMode;
+    actionSelect.hidden = !actionMode;
+    messageInput.disabled = actionMode;
+    actionSelect.disabled = !actionMode;
+    updateCommandValidity();
+  };
+
   row.querySelector('.command-input').addEventListener('input', event => {
     event.target.value = sanitizeCommand(event.target.value);
     updateCommandValidity();
   });
-  row.querySelector('.command-message').addEventListener('input', updateCommandValidity);
+  typeSelect.addEventListener('change', updateCommandControl);
+  messageInput.addEventListener('input', updateCommandValidity);
+  actionSelect.addEventListener('change', updateCommandValidity);
   row.querySelector('.delete-command-btn').addEventListener('click', () => {
     row.remove();
     updateCommandsButton();
@@ -465,6 +508,7 @@ function createCommandRow(command = '', message = '') {
   });
 
   commandsList.append(row);
+  updateCommandControl();
   updateCommandValidity();
 }
 
