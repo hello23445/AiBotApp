@@ -335,7 +335,7 @@ function applySettings(settings) {
 }
 
 function sanitizeCommand(value) {
-  return value.toLowerCase().replace(/[^a-z_]/g, '').slice(0, 20);
+  return value.toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20);
 }
 
 function getEmojiSegments(value) {
@@ -463,11 +463,11 @@ function createCommandRow(command = '', message = '') {
   row.innerHTML = `
     <div class="command-name-wrap">
       <span class="command-prefix" aria-hidden="true">/</span>
-      <input class="text-input command-input" type="text" maxlength="20" pattern="[a-z_]+" inputmode="lowercase" aria-label="Название команды" placeholder="команда" value="${command}">
+      <input class="text-input command-input" type="text" maxlength="20" pattern="[a-z0-9_]+" inputmode="text" aria-label="Название команды" placeholder="команда" value="${command}">
     </div>
     <input class="text-input command-message-control command-message" type="text" maxlength="200" aria-label="Сообщение команды" placeholder="Сообщение команды" value="${message}">
     <select class="text-input command-message-control command-action" aria-label="Действие" disabled>
-      <option value="" selected disabled>Действие</option>
+      <option value="" selected disabled>Выберите действие</option>
       ${actionOptions}
     </select>
     <select class="text-input command-type" aria-label="Тип команды">
